@@ -1,24 +1,39 @@
-import { ScaleLinear } from "d3";
 import React from "react";
-import { StyleSheet, View, Text } from "react-native";
-import Animated, { useDerivedValue } from "react-native-reanimated";
+import { Dimensions, StyleSheet, Text, View } from "react-native";
+import Animated, {
+  interpolate,
+  useDerivedValue,
+} from "react-native-reanimated";
 import { ReText } from "react-native-redash";
+const { width } = Dimensions.get("window");
 
 type Props = {
   y: Animated.SharedValue<number>;
-  scaleY: Animated.SharedValue<ScaleLinear<number, number, never>>;
+  x: Animated.SharedValue<number>;
+  minMaxTime: { minTime: number; maxTime: number };
 };
 
-export const Header = ({ y, scaleY }: Props) => {
+export const Header = ({ y, x, minMaxTime }: Props) => {
   const price = useDerivedValue(() => {
-    scaleY.value(y.value) + "";
+    const p = interpolate(y.value, [200, 0], [0, 300]);
+    return `$ ${p.toLocaleString()}`;
   });
+  const date = useDerivedValue(() => {
+    const d = interpolate(
+      x.value,
+      [20, 335],
+      [minMaxTime.minTime, minMaxTime.maxTime]
+    );
+    return `${new Date(d).toUTCString()}`;
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.values}>
         <View>
-          <ReText style={styles.value} text={price} />
           <Text style={styles.label}>HKD</Text>
+          <ReText text={price}></ReText>
+          <ReText text={date}></ReText>
         </View>
       </View>
     </View>

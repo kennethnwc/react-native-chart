@@ -1,13 +1,12 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedGestureHandler,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from "react-native-reanimated";
-import { getYForX, Path } from "react-native-redash";
-import { PanGestureHandler } from "react-native-gesture-handler";
+import { clamp, getYForX, Path } from "react-native-redash";
 
 const CURSOR = 50;
 const styles = StyleSheet.create({
@@ -30,17 +29,17 @@ const styles = StyleSheet.create({
 interface CursorProps {
   data: Animated.SharedValue<{ path: Path }>;
   y: Animated.SharedValue<number>;
+  x: Animated.SharedValue<number>;
 }
 
-export const Cursor = ({ data, y }: CursorProps) => {
+export const Cursor = ({ data, y, x }: CursorProps) => {
   const active = useSharedValue(false);
-  const x = useSharedValue(0);
   const onGestureEvent = useAnimatedGestureHandler({
     onStart: () => {
       active.value = true;
     },
     onActive: (event) => {
-      x.value = event.x;
+      x.value = clamp(event.x, 25, 335);
       y.value = getYForX(data.value.path, x.value)!;
     },
     onEnd: () => {
@@ -53,11 +52,9 @@ export const Cursor = ({ data, y }: CursorProps) => {
     const translateY = y.value - CURSOR / 2;
     return {
       transform: [{ translateX }, { translateY }],
-      opacity: withTiming(active.value ? 1 : 0),
+      opacity: 1,
     };
   });
-
-  console.log(x.value);
 
   return (
     <PanGestureHandler onGestureEvent={onGestureEvent}>

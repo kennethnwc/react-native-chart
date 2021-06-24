@@ -1,24 +1,22 @@
-import { curveBasis, curveStepAfter, line, scaleLinear, scaleTime } from "d3";
+import { curveBasis, line, scaleLinear, scaleTime } from "d3";
 import React from "react";
-import { Dimensions, SafeAreaView, StyleSheet, View } from "react-native";
-import { Defs, LinearGradient, Path, Stop, Svg } from "react-native-svg";
-import { Cursor } from "./Cursor";
+import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, {
   useAnimatedProps,
-  useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from "react-native-reanimated";
-import { parse, serialize } from "react-native-redash";
+import { getYForX, parse, serialize } from "react-native-redash";
+import { Path, Svg } from "react-native-svg";
+import { Cursor } from "./Cursor";
 import { Header } from "./Header";
 
 const data = [
-  { x: new Date(2018, 9, 1), y: 0 },
-  { x: new Date(2018, 9, 16), y: 0 },
-  { x: new Date(2018, 9, 17), y: 200 },
-  { x: new Date(2018, 10, 1), y: 200 },
-  { x: new Date(2018, 10, 2), y: 300 },
-  { x: new Date(2018, 10, 5), y: 300 },
+  { x: new Date(2018, 9, 1).getTime(), y: 0 },
+  { x: new Date(2018, 9, 16).getTime(), y: 0 },
+  { x: new Date(2018, 9, 17).getTime(), y: 200 },
+  { x: new Date(2018, 10, 1).getTime(), y: 200 },
+  { x: new Date(2018, 10, 2).getTime(), y: 300 },
+  { x: new Date(2018, 10, 5).getTime(), y: 300 },
 ];
 
 const height = 200;
@@ -26,19 +24,22 @@ const { width } = Dimensions.get("window");
 const verticalPadding = 5;
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
+export const margin = { left: 20, right: 20 };
+export const innerWidth = width - margin.left - margin.right;
+
 export default function App() {
+  const minTime = new Date(2018, 9, 1).getTime();
+  const maxTime = new Date(2018, 10, 5).getTime();
   const scaleX = scaleTime()
-    .domain([new Date(2018, 9, 1), new Date(2018, 10, 5)])
-    .range([0, width]);
-  const scaleY = scaleLinear()
-    .domain([0, 300])
-    .range([height - verticalPadding, verticalPadding]);
+    .domain([minTime, maxTime])
+    .range([margin.left, innerWidth]);
+  const scaleY = scaleLinear().domain([0, 300]).range([height, 0]);
 
   const path = parse(
-    line<{ x: Date; y: number }>()
+    line<{ x: number; y: number }>()
       .x((d) => scaleX(d.x))
       .y((d) => scaleY(d.y))
-      .curve(curveStepAfter)(data) || ""
+      .curve(curveBasis)(data) || ""
   );
 
   const animatedProps = useAnimatedProps(() => {
@@ -46,14 +47,15 @@ export default function App() {
   });
 
   const current = useSharedValue({ path: path });
-  const y = useSharedValue(0);
-  const sharedY = useSharedValue(scaleY);
-  console.log(sharedY);
+
+  const x = useSharedValue(innerWidth);
+  const y = useSharedValue(getYForX(path, x.value)!);
+
   return (
     <View style={styles.container}>
-      <Header y={y} scaleY={sharedY} />
+      <Header y={y} x={x} minMaxTime={{ minTime, maxTime }} />
       <View>
-        <Svg width={width} height={height}>
+        <Svg width={innerWidth} height={height}>
           <AnimatedPath
             animatedProps={animatedProps}
             fill="transparent"
@@ -61,7 +63,7 @@ export default function App() {
             strokeWidth={5}
           />
         </Svg>
-        <Cursor data={current} y={y} />
+        <Cursor data={current} y={y} x={x} />
       </View>
     </View>
   );
