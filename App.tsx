@@ -1,4 +1,4 @@
-import { curveBasis, line, scaleLinear, scaleTime } from "d3";
+import { curveBasis, curveStepBefore, line, scaleLinear, scaleTime } from "d3";
 import React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
 import Animated, {
@@ -21,7 +21,6 @@ const data = [
 
 const height = 200;
 const { width } = Dimensions.get("window");
-const verticalPadding = 5;
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 export const margin = { left: 20, right: 20 };
@@ -39,7 +38,7 @@ export default function App() {
     line<{ x: number; y: number }>()
       .x((d) => scaleX(d.x))
       .y((d) => scaleY(d.y))
-      .curve(curveBasis)(data) || ""
+      .curve(curveStepBefore)(data) || ""
   );
 
   const animatedProps = useAnimatedProps(() => {
